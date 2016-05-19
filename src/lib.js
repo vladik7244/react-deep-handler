@@ -28,33 +28,15 @@ function changeHandler(stateGetter, handler = defaultHandler, stateSetter = () =
       break;
   }
 
-  const propertyPath = [];
+  //Todo use Map
   const cache = {};
 
-  function listener(properties) {
-    const calledFunction = function (event) {
-      eventHandler(event, properties);
-    };
-    calledFunction.add = function(property) {
-      const newProperties = bindState(property, properties);
-
-      if (typeof cache[newProperties] == 'function') {
-        return cache[newProperties];
-      } else {
-        const newListener = listener(newProperties);
-        cache[newProperties] = newListener;
-        return newListener;
-      }
-    };
-    return calledFunction;
-  }
-
-  function eventHandler(e, propertyPath) {
+  function eventHandler(e, properties) {
     const newValue = handler(e);
 
     function deepAssign(level, levelState) {
-      if (level < propertyPath.length) {
-        const currentProperty = propertyPath[level];
+      if (level < properties.length) {
+        const currentProperty = properties[level];
         return {
           ...levelState,
           [currentProperty]: deepAssign(level + 1, levelState[currentProperty])
@@ -68,13 +50,17 @@ function changeHandler(stateGetter, handler = defaultHandler, stateSetter = () =
     stateSetter(newState);
   }
 
-  function bindState(property, properties) {
-    const newProperties = [...properties];
-    newProperties.push(property);
-    return newProperties;
-  }
-
-  return listener(propertyPath);
+  return function(properties) {
+    if (typeof cache[properties] == 'function') {
+      return cache[properties];
+    } else {
+      const calledFunction = function (event) {
+        eventHandler(event, properties);
+      };
+      cache[properties] = calledFunction;
+      return calledFunction;
+    }
+  };
 }
 // export 
 module.exports = changeHandler;

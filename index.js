@@ -4,8 +4,6 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 function defaultHandler(e) {
@@ -45,33 +43,15 @@ function changeHandler(stateGetter) {
       break;
   }
 
-  var propertyPath = [];
+  //Todo use Map
   var cache = {};
 
-  function listener(properties) {
-    var calledFunction = function calledFunction(event) {
-      eventHandler(event, properties);
-    };
-    calledFunction.add = function (property) {
-      var newProperties = bindState(property, properties);
-
-      if (typeof cache[newProperties] == 'function') {
-        return cache[newProperties];
-      } else {
-        var newListener = listener(newProperties);
-        cache[newProperties] = newListener;
-        return newListener;
-      }
-    };
-    return calledFunction;
-  }
-
-  function eventHandler(e, propertyPath) {
+  function eventHandler(e, properties) {
     var newValue = handler(e);
 
     function deepAssign(level, levelState) {
-      if (level < propertyPath.length) {
-        var currentProperty = propertyPath[level];
+      if (level < properties.length) {
+        var currentProperty = properties[level];
         return _extends({}, levelState, _defineProperty({}, currentProperty, deepAssign(level + 1, levelState[currentProperty])));
       } else {
         return newValue;
@@ -82,13 +62,17 @@ function changeHandler(stateGetter) {
     stateSetter(newState);
   }
 
-  function bindState(property, properties) {
-    var newProperties = [].concat(_toConsumableArray(properties));
-    newProperties.push(property);
-    return newProperties;
-  }
-
-  return listener(propertyPath);
+  return function (properties) {
+    if (typeof cache[properties] == 'function') {
+      return cache[properties];
+    } else {
+      var calledFunction = function calledFunction(event) {
+        eventHandler(event, properties);
+      };
+      cache[properties] = calledFunction;
+      return calledFunction;
+    }
+  };
 }
 // export
 module.exports = changeHandler;
